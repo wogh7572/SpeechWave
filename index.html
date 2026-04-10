@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpeechWave — AI 스피치 코치</title>
+
+<!-- 폰트 & 아이콘 -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+
+<!-- 스타일 -->
+<link rel="stylesheet" href="/css/main.css">
+
+<!-- 외부 라이브러리 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- SIDEBAR                                              -->
+<!-- ════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <a onclick="goHome()">
+      <div class="logo-icon"><i class="ri-presentation-line"></i></div>
+      <span class="logo-text">SpeechWave</span>
+    </a>
+    <div class="logo-sub">AI 스피치 코치</div>
+  </div>
+
+  <nav>
+    <button class="nav-item active" id="nav-home" onclick="goHome()">
+      <div class="nav-icon"><i class="ri-home-5-line"></i></div>
+      Practice
+    </button>
+    <button class="nav-item locked" id="nav-analysis" onclick="showPage('analysis')">
+      <div class="nav-step" id="step-a">1</div>
+      Script Analysis
+    </button>
+    <button class="nav-item locked" id="nav-recording" onclick="showPage('recording')">
+      <div class="nav-step" id="step-r">2</div>
+      Recording
+    </button>
+    <button class="nav-item locked" id="nav-result" onclick="showPage('result')">
+      <div class="nav-step" id="step-s">3</div>
+      Results
+    </button>
+    <div style="height:1px;background:#f3f4f6;margin:8px 4px"></div>
+    <button class="nav-item" id="nav-history" onclick="showPage('history')">
+      <div class="nav-icon"><i class="ri-history-line"></i></div>
+      <span>History</span>
+      <span id="historyBadge" style="display:none;margin-left:auto;font-size:10px;font-weight:700;background:#eef2ff;color:#6366f1;padding:1px 7px;border-radius:20px"></span>
+    </button>
+  </nav>
+
+  <!-- 로그인 상태에 따라 auth.js가 동적으로 렌더링 -->
+  <div id="sidebarAuthArea">
+    <div class="sidebar-login-cta">
+      <button class="sidebar-login-btn" onclick="openAuthModal('login')">
+        <i class="ri-login-circle-line"></i> 로그인 / 회원가입
+      </button>
+      <div class="sidebar-login-note">기록을 클라우드에 저장하려면 로그인하세요</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- MAIN                                                 -->
+<!-- ════════════════════════════════════════════════════ -->
+<div class="main">
+  <header class="top-header" id="topHeader">
+    <div>
+      <h2 id="hTitle">Practice</h2>
+      <p id="hSub">스크립트를 입력하고 최고의 발표를 준비하세요</p>
+    </div>
+    <div id="hRight"></div>
+  </header>
+
+  <div class="content">
+
+    <!-- ── HOME ── -->
+    <div class="page active anim-f" id="page-home">
+      <div class="home-wrap">
+        <div class="hero">
+          <div class="hero-glow"></div>
+          <div class="hero-badge">
+            <i class="ri-sparkling-2-fill" style="color:#fbbf24;font-size:14px"></i>
+            <span>AI Powered</span>
+          </div>
+          <h2>당신만의 개인<br>발표 코치.</h2>
+          <p>스크립트를 입력하면 AI가 강세·연음·포즈를 분석하고,<br>녹음 후 실제 발표를 평가해 드려요.</p>
+          <div class="flow-row">
+            <div class="f-step"><div class="f-num">1</div>스크립트 입력</div>
+            <div class="f-arr"></div>
+            <div class="f-step"><div class="f-num">2</div>AI 분석</div>
+            <div class="f-arr"></div>
+            <div class="f-step"><div class="f-num">3</div>녹음</div>
+            <div class="f-arr"></div>
+            <div class="f-step"><div class="f-num">4</div>점수 확인</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <div class="sec-lbl">
+              <i class="ri-file-text-line" style="color:#6366f1;font-size:13px"></i>
+              발표 스크립트 입력
+            </div>
+            <textarea id="scriptInput" rows="5"
+              placeholder="발표 스크립트를 입력하거나 붙여넣으세요...
+
+예) Good morning, everyone. Today I'll be presenting our quarterly results."></textarea>
+            <div class="chip-row">
+              <span style="font-size:10px;color:#9ca3af;width:100%;display:block;margin-bottom:2px">예시 스크립트:</span>
+              <button class="chip-ex" onclick="setEx(0)">예시 1 — 분기 보고</button>
+              <button class="chip-ex" onclick="setEx(1)">예시 2 — 제품 발표</button>
+              <button class="chip-ex" onclick="setEx(2)">예시 3 — 환영 인사</button>
+            </div>
+            <button class="btn-p" id="analyzeBtn" onclick="runAnalysis()">
+              <span class="btn-lbl"><i class="ri-sparkling-2-line"></i> AI 분석 시작</span>
+              <div class="spinner"></div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ANALYSIS ── -->
+    <div class="page" id="page-analysis">
+      <div class="analysis-layout">
+        <div class="analysis-main">
+          <div class="analysis-header">
+            <div class="done-badge">
+              <div class="done-icon"><i class="ri-sparkling-2-fill"></i></div>
+              <div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="done-title">분석 완료</div>
+                  <span class="status-chip">완료</span>
+                </div>
+                <div class="done-sub" id="analysisSummary">스크립트 분석이 완료되었습니다.</div>
+              </div>
+            </div>
+            <div class="time-chip"><i class="ri-time-line"></i><span id="analysisTime">약 30초</span></div>
+          </div>
+
+          <div class="legend-bar">
+            <div class="leg-item"><div class="leg-dot-hi"></div>핵심 강조 단어</div>
+            <div class="leg-item"><div class="leg-dot-mid"></div>보통 강조 단어</div>
+            <div class="leg-item"><div class="leg-slash">/</div>끊어 읽기</div>
+            <div class="leg-item">
+              <svg class="leg-curve" viewBox="0 0 24 12" fill="none">
+                <path d="M0 10 Q6 2 12 6 Q18 10 24 4" stroke="#9ca3af" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              </svg>
+              피치 곡선
+            </div>
+            <div class="leg-item" style="margin-left:auto;color:#6366f1;font-size:11px;cursor:default">
+              <i class="ri-volume-up-line" style="font-size:13px"></i>&nbsp;단어 클릭 시 발음 재생
+            </div>
+          </div>
+
+          <div class="script-viz" id="scriptViz">
+            <div class="empty-s">
+              <div class="empty-i"><i class="ri-music-2-line"></i></div>
+              분석 후 표시됩니다
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-body">
+              <div class="sec-lbl">
+                <i class="ri-book-2-line" style="color:#10b981;font-size:13px"></i>발음 규칙
+              </div>
+              <div id="analysisRules">
+                <div class="empty-s" style="padding:16px"><p>분석 후 표시됩니다</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="analysis-right">
+          <div class="coach-panel">
+            <div class="coach-head" style="padding:14px 18px 0">
+              <div class="coach-title-row">
+                <div class="coach-title">AI 코칭 — <span id="coachCount">0</span>개 팁</div>
+                <div class="ai-badge"><i class="ri-sparkling-2-fill" style="font-size:9px"></i>AI 생성</div>
+              </div>
+              <div class="priority-alert" id="priorityAlert" style="display:none">
+                <i class="ri-alert-line"></i>
+                <span id="priorityText">우선 적용 팁 — 이것만 먼저 연습해도 발표 품질이 크게 달라집니다.</span>
+              </div>
+              <div class="filter-tabs" id="filterTabs">
+                <button class="ftab active" onclick="filterCoach('all',this)">전체</button>
+                <button class="ftab" onclick="filterCoach('emphasis',this)">강조</button>
+                <button class="ftab" onclick="filterCoach('pause',this)">끊기</button>
+                <button class="ftab" onclick="filterCoach('tone',this)">억양</button>
+                <button class="ftab" onclick="filterCoach('speed',this)">속도</button>
+                <button class="ftab" onclick="filterCoach('gesture',this)">제스처</button>
+              </div>
+            </div>
+            <div class="coach-cards" id="coachCards">
+              <div class="empty-s"><p style="font-size:11px">분석 후 표시됩니다</p></div>
+            </div>
+          </div>
+
+          <div class="go-record">
+            <div class="go-record-icon"><i class="ri-mic-fill"></i></div>
+            <h3>분석 완료!</h3>
+            <p>피치 곡선을 확인하고 연습했다면<br>이제 직접 녹음해서 점수를 받아보세요.</p>
+            <button class="btn-rec" onclick="showPage('recording')">
+              <i class="ri-mic-line"></i> 녹음 시작하기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RECORDING ── -->
+    <div class="page" id="page-recording">
+      <div class="sec-lbl" style="margin-bottom:14px">
+        <i class="ri-file-text-line" style="color:#6366f1;font-size:13px"></i>발표 스크립트
+      </div>
+      <div class="record-preview">
+        <p class="record-preview-text" id="recScriptText"></p>
+      </div>
+      <div class="record-area">
+        <div class="mic-ring" id="micRing" onclick="toggleRec()">
+          <i class="ri-mic-line mic-i" id="micI"></i>
+        </div>
+        <div class="rec-status" id="recStatus">준비됨</div>
+        <div class="rec-sub" id="recSub">마이크 버튼을 눌러 녹음을 시작하세요</div>
+        <div class="timer" id="timer">0:00</div>
+        <div class="waveform" id="waveform">
+          <div class="wbar" style="height:6px" id="w0"></div><div class="wbar" style="height:8px" id="w1"></div>
+          <div class="wbar" style="height:6px" id="w2"></div><div class="wbar" style="height:10px" id="w3"></div>
+          <div class="wbar" style="height:6px" id="w4"></div><div class="wbar" style="height:8px" id="w5"></div>
+          <div class="wbar" style="height:6px" id="w6"></div><div class="wbar" style="height:10px" id="w7"></div>
+          <div class="wbar" style="height:6px" id="w8"></div><div class="wbar" style="height:8px" id="w9"></div>
+        </div>
+        <div class="rec-btns">
+          <button class="rbtn rbtn-start" id="btnStart" onclick="startRec()">
+            <i class="ri-mic-fill"></i> 녹음 시작
+          </button>
+          <button class="rbtn rbtn-stop" id="btnStop" onclick="stopRec()" style="display:none">
+            <i class="ri-stop-fill"></i> 녹음 중지
+          </button>
+          <button class="rbtn rbtn-back" onclick="showPage('analysis')">
+            <i class="ri-arrow-left-line"></i> 돌아가기
+          </button>
+        </div>
+      </div>
+      <div class="rec-msg" id="recMsg"></div>
+    </div>
+
+    <!-- ── RESULT ── -->
+    <div class="page" id="page-result">
+      <div class="result-score-bar anim-f">
+        <div style="flex-shrink:0">
+          <svg width="96" height="96" viewBox="0 0 96 96" id="scoreRing"></svg>
+        </div>
+        <div class="score-info">
+          <div class="score-lbl">Overall Score</div>
+          <div class="score-num-row">
+            <div class="score-big" id="scoreNum">—</div>
+            <span class="grade-chip" id="gradeChip">분석 중</span>
+          </div>
+          <div class="score-desc-t" id="scoreDesc">녹음을 기반으로 발표를 평가했습니다.</div>
+        </div>
+        <div class="score-bars" id="scoreBars"></div>
+      </div>
+
+      <div class="result-layout">
+        <div class="result-main">
+          <div class="result-ann">
+            <div class="sec-lbl">
+              <i class="ri-file-text-line" style="color:#f59e0b;font-size:13px"></i>발음 분석 결과
+            </div>
+            <div class="ann-words" id="resultAnn"></div>
+          </div>
+          <div class="result-rules">
+            <div class="sec-lbl">
+              <i class="ri-book-2-line" style="color:#10b981;font-size:13px"></i>발음 규칙
+            </div>
+            <div id="resultRules"></div>
+          </div>
+          <div class="actions-row">
+            <button class="btn-p" style="margin-top:0;flex:1" onclick="showPage('recording')">
+              <span class="btn-lbl"><i class="ri-mic-line"></i> 다시 녹음하기</span>
+            </button>
+            <button class="btn-sec" onclick="goHome()">
+              <i class="ri-home-line"></i> 홈으로
+            </button>
+          </div>
+        </div>
+        <div class="result-right">
+          <div class="metrics-col" id="resultMetrics"></div>
+          <div class="strengths" id="strengthsWrap" style="display:none">
+            <div class="str-title"><i class="ri-award-line"></i> 잘 하고 있는 점</div>
+            <div id="strengthsList"></div>
+          </div>
+          <div class="coach-panel">
+            <div style="padding:14px 18px 0">
+              <div class="coach-title-row">
+                <div class="coach-title">AI 코칭 팁</div>
+                <div class="ai-badge"><i class="ri-sparkling-2-fill" style="font-size:9px"></i>AI</div>
+              </div>
+            </div>
+            <div class="coach-cards" id="resultCoach"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HISTORY ── -->
+    <div class="page" id="page-history">
+      <div class="history-top">
+        <div>
+          <h3>History</h3>
+          <p>이전에 연습했던 스크립트를 다시 열람하세요</p>
+        </div>
+        <div class="history-search">
+          <i class="ri-search-line" style="color:#9ca3af;font-size:14px;flex-shrink:0"></i>
+          <input type="text" id="historySearchInput" placeholder="스크립트 검색..." oninput="renderHistoryList()">
+        </div>
+      </div>
+      <div class="history-stats" id="historyStats"></div>
+      <div class="history-filter-row">
+        <button class="hfil active" onclick="setHistoryFilter('all',this)">전체</button>
+        <button class="hfil" onclick="setHistoryFilter('week',this)">이번 주</button>
+        <button class="hfil" onclick="setHistoryFilter('month',this)">이번 달</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- MODALS                                               -->
+<!-- ════════════════════════════════════════════════════ -->
+
+<!-- 평가 진행 오버레이 -->
+<div class="eval-overlay" id="evalOverlay">
+  <div class="eval-box">
+    <div class="eval-icon">🎤</div>
+    <div class="eval-title">발음 분석 중</div>
+    <div class="eval-step" id="evalStep">준비 중...</div>
+    <div class="eval-bar-wrap">
+      <div class="eval-bar" id="evalBar"></div>
+    </div>
+    <div class="eval-pct" id="evalPct">0%</div>
+  </div>
+</div>
+
+<!-- 인증 모달 -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAuthModal()"><i class="ri-close-line"></i></button>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login"  onclick="switchAuthTab('login')">로그인</button>
+      <button class="auth-tab"        id="tab-signup" onclick="switchAuthTab('signup')">회원가입</button>
+    </div>
+
+    <!-- 로그인 패널 -->
+    <div class="auth-panel active" id="panel-login">
+      <div style="text-align:center;margin-bottom:20px">
+        <div class="auth-logo"><i class="ri-presentation-line"></i></div>
+        <div class="auth-title">다시 만나요! 👋</div>
+        <div class="auth-sub">이메일과 비밀번호로 로그인하세요</div>
+      </div>
+      <button class="social-btn" onclick="loginWithGoogle()" style="margin-bottom:14px">
+        <svg width="18" height="18" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Google로 로그인
+      </button>
+      <div class="auth-divider">이메일로 로그인</div>
+      <div class="auth-error" id="loginError"><i class="ri-error-warning-line"></i><span id="loginErrorMsg"></span></div>
+      <div class="form-group">
+        <label class="form-label">이메일</label>
+        <input class="form-input" type="email" id="loginEmail" placeholder="your@email.com" oninput="clearAuthError('login')">
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <div class="input-wrap">
+          <input class="form-input" type="password" id="loginPassword" placeholder="비밀번호 입력" oninput="clearAuthError('login')" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="pw-toggle" type="button" onclick="togglePw('loginPassword',this)"><i class="ri-eye-off-line"></i></button>
+        </div>
+      </div>
+      <button class="auth-submit" id="loginBtn" onclick="doLogin()">로그인</button>
+      <div style="text-align:center;margin-top:14px">
+        <span style="font-size:12px;color:#9ca3af">계정이 없으신가요?</span>
+        <button onclick="switchAuthTab('signup')" style="font-size:12px;color:#6366f1;font-weight:600;border:none;background:none;cursor:pointer;margin-left:4px">회원가입</button>
+      </div>
+      <div class="auth-divider" style="margin-top:16px"></div>
+      <button onclick="continueAsGuest()" style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb;font-size:12px;color:#6b7280;cursor:pointer;font-family:inherit">
+        로그인 없이 계속하기 <span style="color:#9ca3af;font-size:10px">(이 기기에만 저장)</span>
+      </button>
+    </div>
+
+    <!-- 회원가입 패널 -->
+    <div class="auth-panel" id="panel-signup">
+      <div style="text-align:center;margin-bottom:20px">
+        <div class="auth-logo"><i class="ri-user-add-line"></i></div>
+        <div class="auth-title">SpeechWave 시작하기</div>
+        <div class="auth-sub">무료로 가입하고 AI 스피치 코칭을 받으세요</div>
+      </div>
+      <button class="social-btn" onclick="loginWithGoogle()" style="margin-bottom:14px">
+        <svg width="18" height="18" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Google로 가입
+      </button>
+      <div class="auth-divider">이메일로 가입</div>
+      <div class="auth-error" id="signupError"><i class="ri-error-warning-line"></i><span id="signupErrorMsg"></span></div>
+      <div class="form-group">
+        <label class="form-label">닉네임</label>
+        <input class="form-input" type="text" id="signupNickname" placeholder="표시될 이름" maxlength="20" oninput="validateNickname()">
+        <div class="form-hint neutral" id="nicknameHint">2~20자, 한글/영문/숫자 사용 가능</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">이메일</label>
+        <input class="form-input" type="email" id="signupEmail" placeholder="your@email.com" oninput="validateEmail()">
+        <div class="form-hint" id="emailHint"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <div class="input-wrap">
+          <input class="form-input" type="password" id="signupPassword" placeholder="8자 이상, 영문+숫자" oninput="validatePassword()">
+          <button class="pw-toggle" type="button" onclick="togglePw('signupPassword',this)"><i class="ri-eye-off-line"></i></button>
+        </div>
+        <div style="display:flex;gap:4px;margin-top:6px">
+          <div style="height:3px;flex:1;border-radius:2px;background:#f3f4f6" id="psb0"></div>
+          <div style="height:3px;flex:1;border-radius:2px;background:#f3f4f6" id="psb1"></div>
+          <div style="height:3px;flex:1;border-radius:2px;background:#f3f4f6" id="psb2"></div>
+          <div style="height:3px;flex:1;border-radius:2px;background:#f3f4f6" id="psb3"></div>
+        </div>
+        <div class="form-hint" id="passwordHint" style="margin-top:4px"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호 확인</label>
+        <div class="input-wrap">
+          <input class="form-input" type="password" id="signupPasswordConfirm" placeholder="비밀번호 재입력" oninput="validateConfirm()">
+          <button class="pw-toggle" type="button" onclick="togglePw('signupPasswordConfirm',this)"><i class="ri-eye-off-line"></i></button>
+        </div>
+        <div class="form-hint" id="confirmHint"></div>
+      </div>
+      <button class="auth-submit" id="signupBtn" onclick="doSignup()">회원가입</button>
+      <div style="text-align:center;margin-top:14px">
+        <span style="font-size:12px;color:#9ca3af">이미 계정이 있으신가요?</span>
+        <button onclick="switchAuthTab('login')" style="font-size:12px;color:#6366f1;font-weight:600;border:none;background:none;cursor:pointer;margin-left:4px">로그인</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 툴팁 -->
+<div id="ttip"></div>
+
+<!-- ════════════════════════════════════════════════════ -->
+<!-- JS 모듈 (의존성 순서대로 로드)                        -->
+<!-- ════════════════════════════════════════════════════ -->
+<script src="/js/config.js"></script>    <!-- Supabase, 상수 -->
+<script src="/js/eval-engine.js"></script> <!-- F0, DTW, STT 엔진 -->
+<script src="/js/ui.js"></script>        <!-- 공통 렌더링 함수 -->
+<script src="/js/auth.js"></script>      <!-- 로그인/회원가입 -->
+<script src="/js/history.js"></script>   <!-- 히스토리 관리 -->
+<script src="/js/analysis.js"></script>  <!-- Claude 분석, 시각화 -->
+<script src="/js/recording.js"></script> <!-- 녹음, 평가 -->
+<script src="/js/app.js"></script>       <!-- 라우팅, 초기화 -->
+
+</body>
+</html>
