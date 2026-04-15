@@ -227,3 +227,15 @@ supa.auth.onAuthStateChange((event, session) => {
     }
   }
 });
+
+// URL에 access_token이 있으면 세션 복원
+(async () => {
+  const { data: { session } } = await supa.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    renderAuthArea(currentUser);
+    updateHistoryBadge();
+    // URL 정리
+    history.replaceState(null, '', window.location.pathname);
+  }
+})();

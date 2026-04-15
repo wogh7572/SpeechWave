@@ -1,7 +1,9 @@
 // ── history.js ─────────────────────────────────────────
 // 로컬 스토리지 + Supabase 클라우드 히스토리 관리
 
-const HS_KEY = 'sw_history_v1';
+function getHsKey() {
+  return currentUser ? `sw_history_v1_${currentUser.id}` : 'sw_history_v1_guest';
+}
 let _historyFilter = 'all';
 
 const COACH_COLORS = {
@@ -14,12 +16,12 @@ const COACH_COLORS = {
 
 // ── 로컬 스토리지 ──────────────────────────────────────
 function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(HS_KEY) || '[]'); }
+  try { return JSON.parse(localStorage.getItem(getHsKey()) || '[]'); }
   catch { return []; }
 }
 
 function saveHistory(items) {
-  localStorage.setItem(HS_KEY, JSON.stringify(items));
+  localStorage.setItem(getHsKey(), JSON.stringify(items));
   updateHistoryBadge();
 }
 

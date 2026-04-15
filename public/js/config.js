@@ -1,8 +1,8 @@
 // ── config.js ──────────────────────────────────────────
 // Supabase 설정 및 전역 상수
 
-const SUPA_URL = 'https://igqlbtaiddigqasakfgy.supabase.co';
-const SUPA_KEY = 'sb_publishable_4LlbWw1F_yOoJe8MorLZvw_0n_NwzW4';
+const SUPA_URL = 'https://rlgdantsnazmuomgjzgt.supabase.co';
+const SUPA_KEY = 'sb_publishable_FYKcJVwKcUQ4Jm8DKdZrPA_0liGrJMe';
 
 // Supabase 클라이언트 (supabase-js CDN 로드 후 사용 가능)
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
